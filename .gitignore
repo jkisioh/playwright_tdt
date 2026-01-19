@@ -6,3 +6,6 @@ node_modules/
 /blob-report/
 /playwright/.cache/
 /playwright/.auth/
+tests/.DS_Store
+.DS_Store
+e2e/.DS_Store
