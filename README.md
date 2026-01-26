@@ -2,7 +2,7 @@
 
 [![Playwright Tests](https://github.com/akvo/climate-think-and-do-tank/actions/workflows/playwright.yml/badge.svg)](https://github.com/akvo/climate-think-and-do-tank/actions/workflows/playwright.yml)
 
-Automated functional tests for the TDT (Tanzania Development Trust) staging environment at https://tdt.akvotest.org/
+Automated functional tests for the TDT (TThink and do Tank) staging environment at https://tdt.akvotest.org/
 
 > **CI/CD**: These tests run automatically on every push, pull request, and daily schedule. See [CICD.md](CICD.md) for detailed CI/CD documentation.
 
