@@ -6,7 +6,20 @@
   "directories": {
     "test": "tests"
   },
-  "scripts": {},
+  "scripts": {
+    "test": "playwright test",
+    "test:chromium": "playwright test --project=chromium",
+    "test:firefox": "playwright test --project=firefox",
+    "test:webkit": "playwright test --project=webkit",
+    "test:headed": "playwright test --headed",
+    "test:ui": "playwright test --ui",
+    "test:debug": "playwright test --debug",
+    "test:pages": "playwright test e2e/pages.spec.ts",
+    "test:content": "playwright test e2e/content.spec.ts",
+    "test:navigation": "playwright test e2e/navigation.spec.ts",
+    "test:report": "playwright show-report",
+    "test:ci": "playwright test --reporter=html,json"
+  },
   "repository": {
     "type": "git",
     "url": "git+https://github.com/jkisioh/playwright_tdt.git"
