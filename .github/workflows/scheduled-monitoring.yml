@@ -1,0 +1,74 @@
+name: Scheduled Staging Monitoring
+
+on:
+  schedule:
+    # Run every 6 hours to monitor staging environment health
+    - cron: '0 */6 * * *'
+  workflow_dispatch:
+    # Allow manual trigger
+
+jobs:
+  health-check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: lts/*
+        cache: 'npm'
+
+    - name: Install dependencies
+      run: npm ci
+
+    - name: Install Playwright
+      run: npx playwright install --with-deps chromium
+
+    - name: Run critical path tests
+      run: npx playwright test e2e/pages.spec.ts --project=chromium
+      continue-on-error: true
+      id: critical-tests
+
+    - name: Run interactivity tests
+      run: npx playwright test e2e/content.spec.ts --project=chromium
+      continue-on-error: true
+      id: interaction-tests
+
+    - name: Create monitoring report
+      if: always()
+      run: |
+        echo "# TDT Staging Health Report" > monitoring-report.md
+        echo "" >> monitoring-report.md
+        echo "**Date:** $(date -u)" >> monitoring-report.md
+        echo "**Environment:** https://tdt.akvotest.org/" >> monitoring-report.md
+        echo "" >> monitoring-report.md
+        if [ "${{ steps.critical-tests.outcome }}" == "success" ]; then
+          echo "✅ Critical Path Tests: PASSED" >> monitoring-report.md
+        else
+          echo "❌ Critical Path Tests: FAILED" >> monitoring-report.md
+        fi
+        if [ "${{ steps.interaction-tests.outcome }}" == "success" ]; then
+          echo "✅ Interactivity Tests: PASSED" >> monitoring-report.md
+        else
+          echo "❌ Interactivity Tests: FAILED" >> monitoring-report.md
+        fi
+
+    - name: Upload monitoring report
+      if: always()
+      uses: actions/upload-artifact@v4
+      with:
+        name: monitoring-report-${{ github.run_number }}
+        path: |
+          monitoring-report.md
+          playwright-report/
+        retention-days: 14
+
+    - name: Send notification on failure
+      if: failure()
+      run: |
+        echo "::warning::Staging environment health check failed. Please investigate."
+        echo "View the full report at: https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}"
