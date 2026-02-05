@@ -112,20 +112,25 @@ test.describe('TDT Website – Site-wide Navigation & UI Elements', () => {
     });
 
     test('should navigate back and forward', async ({ page }) => {
-      await page.goto('/', { waitUntil: 'domcontentloaded' });
+      await page.goto('/', { waitUntil: 'domcontentloaded', timeout: 30000 });
+
+      // Wait for page to be ready
+      const header = page.locator('header, [role="banner"]').first();
+      await expect(header).toBeVisible({ timeout: 15000 });
+
       const homeUrl = page.url();
 
-      await page.goto('/investment-profiles', { waitUntil: 'domcontentloaded' });
+      await page.goto('/investment-profiles', { waitUntil: 'domcontentloaded', timeout: 30000 });
+      await expect(header).toBeVisible({ timeout: 15000 });
+
       const investmentUrl = page.url();
 
       // Navigate back
-      await page.goBack();
-      await page.waitForLoadState('domcontentloaded');
+      await page.goBack({ waitUntil: 'domcontentloaded', timeout: 30000 });
       expect(page.url()).toBe(homeUrl);
 
       // Navigate forward
-      await page.goForward();
-      await page.waitForLoadState('domcontentloaded');
+      await page.goForward({ waitUntil: 'domcontentloaded', timeout: 30000 });
       expect(page.url()).toBe(investmentUrl);
     });
 

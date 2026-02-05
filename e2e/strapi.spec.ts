@@ -98,16 +98,21 @@ const contentBackups: ContentBackup[] = [];
 
 // ============================================================================
 // STRAPI CONTENT MANAGEMENT TESTS
-// These tests require STRAPI_EMAIL and STRAPI_PASSWORD environment variables
-// Skip this entire describe block if credentials are not configured
+// These tests require:
+// 1. STRAPI_EMAIL and STRAPI_PASSWORD environment variables
+// 2. RUN_STRAPI_TESTS=true to explicitly enable (prevents accidental runs)
+// Skip in CI or when not explicitly enabled
 // ============================================================================
 
-// Only define these tests if credentials are configured
+// Only run these tests when explicitly enabled AND credentials are configured
 const hasCredentials = STRAPI_EMAIL && STRAPI_PASSWORD;
+const isCI = !!process.env.CI;
+const runStrapiTests = process.env.RUN_STRAPI_TESTS === 'true';
+const shouldRunStrapiTests = hasCredentials && runStrapiTests && !isCI;
 
 test.describe('Strapi CMS Content Management', () => {
-  // Skip all tests in this block if no credentials
-  test.skip(!hasCredentials, 'Strapi credentials not configured');
+  // Skip unless explicitly enabled with RUN_STRAPI_TESTS=true
+  test.skip(!shouldRunStrapiTests, 'Strapi tests disabled (set RUN_STRAPI_TESTS=true to enable)');
 
   test.use({
     navigationTimeout: 45000,
@@ -159,15 +164,12 @@ test.describe('Strapi CMS Content Management', () => {
 
   // ==========================================================================
   // COMMENTED OUT: Tests that modify real data
-  // Uncomment these tests when you want to run full integration tests
-  // NOTE: You'll need to customize the content type names and selectors
-  // to match your specific Strapi schema
+  // These tests are DANGEROUS - they modify live content on staging!
+  // Only uncomment and run manually when specifically needed for testing.
   // ==========================================================================
 
-  /*
+  
   test('should modify homepage content and verify on frontend', async ({ page, baseURL }) => {
-    test.skip(!STRAPI_EMAIL || !STRAPI_PASSWORD, 'Strapi credentials not configured');
-
     // Step 1: Login to Strapi
     await loginToStrapi(page);
 
@@ -210,8 +212,6 @@ test.describe('Strapi CMS Content Management', () => {
   });
 
   test('should modify news article and verify on frontend', async ({ page, baseURL }) => {
-    test.skip(!STRAPI_EMAIL || !STRAPI_PASSWORD, 'Strapi credentials not configured');
-
     let originalTitle = '';
 
     try {
@@ -256,8 +256,6 @@ test.describe('Strapi CMS Content Management', () => {
   });
 
   test('should modify stakeholder entry and verify on frontend', async ({ page, baseURL }) => {
-    test.skip(!STRAPI_EMAIL || !STRAPI_PASSWORD, 'Strapi credentials not configured');
-
     try {
       await loginToStrapi(page);
 
@@ -296,7 +294,7 @@ test.describe('Strapi CMS Content Management', () => {
       throw error;
     }
   });
-  */
+  
 });
 
 // ============================================================================

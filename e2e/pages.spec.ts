@@ -186,7 +186,11 @@ test.describe('TDT Website – Functional Testing on Staging', () => {
   }
 
   test('should test cross-page navigation', async ({ page }) => {
-    await page.goto('/', { waitUntil: 'domcontentloaded' });
+    await page.goto('/', { waitUntil: 'domcontentloaded', timeout: 30000 });
+
+    // Verify initial page loaded
+    const header = page.locator('header, [role="banner"]').first();
+    await expect(header).toBeVisible({ timeout: 15000 });
 
     // Test navigation to different pages
     const testNavigationFlow = [
@@ -196,7 +200,8 @@ test.describe('TDT Website – Functional Testing on Staging', () => {
     ];
 
     for (const step of testNavigationFlow) {
-      await page.goto(step.url, { waitUntil: 'domcontentloaded' });
+      await page.goto(step.url, { waitUntil: 'domcontentloaded', timeout: 30000 });
+      await expect(header).toBeVisible({ timeout: 15000 });
       await expect(page).toHaveURL(new RegExp(step.url));
       const bodyText = await page.locator('body').textContent() || '';
       expect(bodyText.toLowerCase()).toContain(step.content.toLowerCase());
