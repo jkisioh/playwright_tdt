@@ -1,11 +1,8 @@
 {
   "name": "tests_tdt",
   "version": "1.0.0",
-  "description": "",
+  "description": "E2E tests for TDT staging environment",
   "main": "index.js",
-  "directories": {
-    "test": "tests"
-  },
   "scripts": {
     "test": "playwright test",
     "test:local": "BASE_URL=http://localhost:3000 STRAPI_URL=http://localhost:1337 playwright test",

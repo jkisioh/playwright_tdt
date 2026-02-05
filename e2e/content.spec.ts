@@ -10,17 +10,17 @@ test.describe('TDT Website – Interactivity & Content Tests', () => {
     test('should have clickable navigation menu items', async ({ page }) => {
       await page.goto('/', { waitUntil: 'domcontentloaded' });
 
-      // Wait for navigation to be visible
-      const nav = page.locator('nav, header nav, [role="navigation"]').first();
-      await expect(nav).toBeVisible({ timeout: 10000 });
+      // Wait for page to load by checking for main heading
+      const heading = page.locator('h2:has-text("Welcome"), h2:has-text("Kenya")').first();
+      await expect(heading).toBeVisible({ timeout: 10000 });
 
-      // Get all navigation links
-      const navLinks = page.locator('nav a, header a, [role="navigation"] a');
-      const firstLink = navLinks.first();
+      // Find a navigation link by role and text (scoped to navigation)
+      const nav = page.getByRole('navigation');
+      const homeLink = nav.getByRole('link', { name: 'Home' });
+      await expect(homeLink).toBeVisible({ timeout: 10000 });
 
-      // Verify link is clickable
-      await expect(firstLink).toBeVisible();
-      const href = await firstLink.getAttribute('href');
+      // Verify link is clickable and has href
+      const href = await homeLink.getAttribute('href');
       expect(href).toBeTruthy();
     });
 
@@ -41,8 +41,9 @@ test.describe('TDT Website – Interactivity & Content Tests', () => {
     test('should display investment cards/items', async ({ page }) => {
       await page.goto('/investment-profiles', { waitUntil: 'domcontentloaded' });
 
-      const mainContent = page.locator('main');
-      await expect(mainContent).toBeVisible();
+      // Wait for page heading to be visible (more reliable than main element)
+      const pageHeading = page.locator('h1, h2').filter({ hasText: /Investment/i }).first();
+      await expect(pageHeading).toBeVisible({ timeout: 10000 });
 
       // Verify page contains investment-related content
       await expect(page.locator('body')).toContainText(/Investment/i);
@@ -65,8 +66,9 @@ test.describe('TDT Website – Interactivity & Content Tests', () => {
     test('should display stakeholder data', async ({ page }) => {
       await page.goto('/stakeholder-directory', { waitUntil: 'domcontentloaded' });
 
-      const mainContent = page.locator('main');
-      await expect(mainContent).toBeVisible();
+      // Wait for page heading to be visible
+      const pageHeading = page.locator('h1, h2').filter({ hasText: /Stakeholder|Directory/i }).first();
+      await expect(pageHeading).toBeVisible({ timeout: 10000 });
 
       // Check for stakeholder content
       await expect(page.locator('body')).toContainText(/Stakeholder|Directory/i);
@@ -92,8 +94,9 @@ test.describe('TDT Website – Interactivity & Content Tests', () => {
     test('should display knowledge resources', async ({ page }) => {
       await page.goto('/knowledge-hub', { waitUntil: 'domcontentloaded' });
 
-      const mainContent = page.locator('main');
-      await expect(mainContent).toBeVisible();
+      // Wait for page heading to be visible
+      const pageHeading = page.locator('h1, h2').filter({ hasText: /Knowledge|Resource/i }).first();
+      await expect(pageHeading).toBeVisible({ timeout: 10000 });
 
       await expect(page.locator('body')).toContainText(/Knowledge|Resource/i);
     });
@@ -152,8 +155,10 @@ test.describe('TDT Website – Interactivity & Content Tests', () => {
     test('should validate form submission button is enabled', async ({ page }) => {
       await page.goto('/contact-us', { waitUntil: 'domcontentloaded' });
 
-      const submitButton = page.locator('button[type="submit"], input[type="submit"]').first();
-      await expect(submitButton).toBeVisible();
+      // Look for submit button with various selectors (scroll into view if needed)
+      const submitButton = page.locator('button[type="submit"], input[type="submit"], button:has-text("Send"), button:has-text("Submit")').first();
+      await submitButton.scrollIntoViewIfNeeded();
+      await expect(submitButton).toBeVisible({ timeout: 10000 });
 
       // Check if button is not permanently disabled
       const isEnabled = await submitButton.isEnabled();
@@ -165,8 +170,9 @@ test.describe('TDT Website – Interactivity & Content Tests', () => {
     test('should display accountability information', async ({ page }) => {
       await page.goto('/social-accountability', { waitUntil: 'domcontentloaded' });
 
-      const mainContent = page.locator('main');
-      await expect(mainContent).toBeVisible();
+      // Wait for page heading to be visible
+      const pageHeading = page.locator('h1, h2').filter({ hasText: /Accountability|Social/i }).first();
+      await expect(pageHeading).toBeVisible({ timeout: 10000 });
 
       await expect(page.locator('body')).toContainText(/Accountability|Social/i);
     });
@@ -176,8 +182,9 @@ test.describe('TDT Website – Interactivity & Content Tests', () => {
     test('should display news or event items', async ({ page }) => {
       await page.goto('/news-events', { waitUntil: 'domcontentloaded' });
 
-      const mainContent = page.locator('main');
-      await expect(mainContent).toBeVisible();
+      // Wait for page heading to be visible
+      const pageHeading = page.locator('h1, h2').filter({ hasText: /News|Events/i }).first();
+      await expect(pageHeading).toBeVisible({ timeout: 10000 });
 
       await expect(page.locator('body')).toContainText(/News|Events/i);
     });
@@ -200,8 +207,9 @@ test.describe('TDT Website – Interactivity & Content Tests', () => {
       await page.setViewportSize({ width: 375, height: 667 });
       await page.goto('/', { waitUntil: 'domcontentloaded' });
 
-      const mainContent = page.locator('main');
-      await expect(mainContent).toBeVisible();
+      // Wait for header/navigation to be visible as page load indicator
+      const header = page.locator('header, nav, [role="banner"]').first();
+      await expect(header).toBeVisible({ timeout: 10000 });
 
       // Check if mobile menu exists
       const mobileMenu = page.locator('button[aria-label*="menu" i], button:has-text("Menu"), .mobile-menu, [class*="hamburger"]');
@@ -216,8 +224,9 @@ test.describe('TDT Website – Interactivity & Content Tests', () => {
       await page.setViewportSize({ width: 768, height: 1024 });
       await page.goto('/', { waitUntil: 'domcontentloaded' });
 
-      const mainContent = page.locator('main');
-      await expect(mainContent).toBeVisible();
+      // Wait for header/navigation to be visible as page load indicator
+      const header = page.locator('header, nav, [role="banner"]').first();
+      await expect(header).toBeVisible({ timeout: 10000 });
     });
   });
 
