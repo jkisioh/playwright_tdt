@@ -1,12 +1,30 @@
 import { defineConfig, devices } from '@playwright/test';
+import dotenv from 'dotenv';
+import path from 'path';
+
+// Load environment variables from .env file
+dotenv.config({ path: path.resolve(__dirname, '.env') });
 
 /**
- * Read environment variables from file.
- * https://github.com/motdotla/dotenv
+ * Environment configuration:
+ * - BASE_URL: The frontend URL to test (default: staging)
+ * - STRAPI_URL: The Strapi admin URL (default: staging Strapi)
+ * - STRAPI_EMAIL: Strapi admin email for authentication
+ * - STRAPI_PASSWORD: Strapi admin password for authentication
+ *
+ * For local testing, create a .env file with:
+ *   BASE_URL=http://localhost:3000
+ *   STRAPI_URL=http://localhost:1337
+ *   STRAPI_EMAIL=admin@example.com
+ *   STRAPI_PASSWORD=your-password
+ *
+ * For staging (default), no .env file is needed or use:
+ *   BASE_URL=https://tdt.akvotest.org
+ *   STRAPI_URL=https://tdt-strapi.akvotest.org
  */
-// import dotenv from 'dotenv';
-// import path from 'path';
-// dotenv.config({ path: path.resolve(__dirname, '.env') });
+
+const BASE_URL = process.env.BASE_URL || 'https://tdt.akvotest.org';
+const STRAPI_URL = process.env.STRAPI_URL || 'https://tdt.akvotest.org/cms';
 
 /**
  * See https://playwright.dev/docs/test-configuration.
@@ -26,9 +44,7 @@ export default defineConfig({
   /* Shared settings for all the projects below. See https://playwright.dev/docs/api/class-testoptions. */
   use: {
     /* Base URL to use in actions like `await page.goto('')`. */
-    // baseURL: 'http://localhost:3000',
-
-    baseURL: 'https://tdt.akvotest.org', 
+    baseURL: BASE_URL,
     headless: true,
 
     /* Collect trace when retrying the failed test. See https://playwright.dev/docs/trace-viewer */

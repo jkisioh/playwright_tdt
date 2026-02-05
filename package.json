@@ -8,6 +8,8 @@
   },
   "scripts": {
     "test": "playwright test",
+    "test:local": "BASE_URL=http://localhost:3000 STRAPI_URL=http://localhost:1337 playwright test",
+    "test:staging": "BASE_URL=https://tdt.akvotest.org STRAPI_URL=https://tdt.akvotest.org/cms playwright test",
     "test:chromium": "playwright test --project=chromium",
     "test:firefox": "playwright test --project=firefox",
     "test:webkit": "playwright test --project=webkit",
@@ -17,6 +19,7 @@
     "test:pages": "playwright test e2e/pages.spec.ts",
     "test:content": "playwright test e2e/content.spec.ts",
     "test:navigation": "playwright test e2e/navigation.spec.ts",
+    "test:strapi": "playwright test e2e/strapi.spec.ts",
     "test:report": "playwright show-report",
     "test:ci": "playwright test --reporter=html,json"
   },
@@ -34,6 +37,7 @@
   "homepage": "https://github.com/jkisioh/playwright_tdt#readme",
   "devDependencies": {
     "@playwright/test": "^1.57.0",
-    "@types/node": "^25.0.9"
+    "@types/node": "^25.0.9",
+    "dotenv": "^17.2.3"
   }
 }

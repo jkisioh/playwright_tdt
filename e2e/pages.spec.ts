@@ -59,8 +59,10 @@ test.describe('TDT Website – Functional Testing on Staging', () => {
     actionTimeout: 20000
   });
 
-  test('should load staging environment correctly', async ({ page, baseURL }) => {
-    expect(baseURL).toBe('https://tdt.akvotest.org');
+  test('should load environment correctly', async ({ page, baseURL }) => {
+    // Verify baseURL is configured (either staging or local)
+    expect(baseURL).toBeTruthy();
+    expect(baseURL).toMatch(/^https?:\/\//);
     await page.goto('/');
     await expect(page).toHaveTitle(/TDT|Tanzania|Investment|Home/i);
   });

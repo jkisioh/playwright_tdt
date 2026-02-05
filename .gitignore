@@ -9,3 +9,8 @@ node_modules/
 tests/.DS_Store
 .DS_Store
 e2e/.DS_Store
+
+# Environment variables (contains credentials)
+.env
+.env.local
+.env.*.local
