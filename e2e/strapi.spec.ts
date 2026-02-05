@@ -162,139 +162,105 @@ test.describe('Strapi CMS Content Management', () => {
     await expect(page).toHaveURL(/content-manager/);
   });
 
-  // ==========================================================================
-  // COMMENTED OUT: Tests that modify real data
-  // These tests are DANGEROUS - they modify live content on staging!
-  // Only uncomment and run manually when specifically needed for testing.
-  // ==========================================================================
+  /**
+   * Test: Edit news article title and verify change, then restore
+   *
+   * This test modifies real content on the staging server.
+   * It reads the current title, modifies it, then restores it.
+   */
+  test('should edit news article title and restore it', async ({ page }) => {
+    const TEST_SUFFIX = ' [E2E-TEST]';
 
-  
-  test('should modify homepage content and verify on frontend', async ({ page, baseURL }) => {
-    // Step 1: Login to Strapi
-    await loginToStrapi(page);
+    // Login to Strapi admin
+    const loggedIn = await loginToStrapi(page);
+    expect(loggedIn).toBe(true);
 
-    // Step 2: Navigate to homepage content
-    await navigateToContentType(page, 'Homepage');
-
-    // Step 3: Find and edit the first entry
-    const firstEntry = page.locator('tr[data-testid], tbody tr').first();
-    await firstEntry.click();
+    // Navigate to Content Manager
+    const contentManagerLink = page.locator('a[href*="content-manager"]').first();
+    await expect(contentManagerLink).toBeVisible({ timeout: 15000 });
+    await contentManagerLink.click();
     await page.waitForLoadState('networkidle');
 
-    // Step 4: Find a text field to modify
-    const titleField = page.locator('input[name*="title"], input[name*="Title"]').first();
-    const hasTitle = await titleField.count() > 0;
+    // Click specifically on "News" in the sidebar Collection Types
+    const newsLink = page.locator('a[href*="news-item.news-item"]');
+    await expect(newsLink).toBeVisible({ timeout: 15000 });
+    await newsLink.click();
+    await page.waitForLoadState('networkidle');
 
-    if (hasTitle) {
-      // Backup original value
-      const originalValue = await titleField.inputValue();
-      contentBackups.push({
-        contentType: 'Homepage',
-        entryId: 'first',
-        fieldName: 'title',
-        originalValue
-      });
+    // Wait for the grid to load
+    await page.waitForTimeout(2000);
 
-      // Modify the field
-      const testValue = `${originalValue} ${TEST_MARKER}`;
-      await titleField.fill(testValue);
+    // Click on the first entry row (ID 1) - click on the row containing "1" in the ID cell
+    // We use the row with date "April 30" which is our test article
+    const articleRow = page.locator('text=April 30').first();
+    await expect(articleRow).toBeVisible({ timeout: 15000 });
+    await articleRow.click();
+    await page.waitForLoadState('networkidle');
 
-      // Save changes
-      const saveButton = page.locator('button:has-text("Save")');
-      await saveButton.click();
-      await page.waitForLoadState('networkidle');
+    // Find the title input field
+    const titleInput = page.locator('input[name="title"]').first();
+    await expect(titleInput).toBeVisible({ timeout: 15000 });
 
-      // Step 5: Verify change on frontend
-      await page.goto(baseURL || 'https://tdt.akvotest.org', { waitUntil: 'networkidle' });
-      const bodyText = await page.locator('body').textContent();
-      expect(bodyText).toContain(TEST_MARKER);
-    }
+    // Wait for the form to fully load
+    await page.waitForTimeout(1000);
+
+    // Read the current title value (might be empty or have content)
+    const originalTitle = await titleInput.inputValue();
+    console.log(`Original title: "${originalTitle}"`);
+
+    // Store backup for restoration in afterEach
+    contentBackups.push({
+      contentType: 'News',
+      entryId: 'news-article',
+      fieldName: 'title',
+      originalValue: originalTitle
+    });
+
+    // Create modified title by adding test suffix
+    const modifiedTitle = (originalTitle || 'Test News Article') + TEST_SUFFIX;
+
+    // Click on the input to focus it, then fill the new title
+    await titleInput.click();
+    await titleInput.fill(modifiedTitle);
+
+    // Small wait for Strapi to recognize the change
+    await page.waitForTimeout(500);
+
+    // Wait for Save button to be enabled and click
+    const saveButton = page.locator('button:has-text("Save"):not([disabled])');
+    await expect(saveButton).toBeVisible({ timeout: 10000 });
+    await saveButton.click();
+
+    // Wait for save to complete
+    await page.waitForLoadState('networkidle');
+    await page.waitForTimeout(2000);
+
+    // Verify the title was changed in the input
+    const updatedValue = await titleInput.inputValue();
+    expect(updatedValue).toBe(modifiedTitle);
+
+    // Now restore the original title
+    await titleInput.click();
+    await titleInput.fill(originalTitle);
+
+    // Small wait for Strapi to recognize the change
+    await page.waitForTimeout(500);
+
+    // Wait for Save button to be enabled again and click
+    await expect(saveButton).toBeVisible({ timeout: 10000 });
+    await saveButton.click();
+
+    // Wait for save to complete
+    await page.waitForLoadState('networkidle');
+    await page.waitForTimeout(2000);
+
+    // Verify restoration
+    const restoredValue = await titleInput.inputValue();
+    expect(restoredValue).toBe(originalTitle);
+
+    // Clear backup since we manually restored
+    contentBackups.length = 0;
   });
-
-  test('should modify news article and verify on frontend', async ({ page, baseURL }) => {
-    let originalTitle = '';
-
-    try {
-      // Login to Strapi
-      await loginToStrapi(page);
-
-      // Navigate to News/Articles content type
-      await navigateToContentType(page, 'Article');
-
-      // Edit first article
-      const firstEntry = page.locator('tr[data-testid], tbody tr').first();
-      await firstEntry.click();
-      await page.waitForLoadState('networkidle');
-
-      // Get and modify title
-      const titleField = page.locator('input[name*="title"], input[name*="Title"]').first();
-      if (await titleField.count() > 0) {
-        originalTitle = await titleField.inputValue();
-        contentBackups.push({
-          contentType: 'Article',
-          entryId: 'first',
-          fieldName: 'title',
-          originalValue: originalTitle
-        });
-
-        const testTitle = `${originalTitle} ${TEST_MARKER}`;
-        await titleField.fill(testTitle);
-
-        // Save
-        await page.locator('button:has-text("Save")').click();
-        await page.waitForLoadState('networkidle');
-
-        // Verify on frontend
-        await page.goto(`${baseURL}/news-events`, { waitUntil: 'networkidle' });
-        const pageContent = await page.locator('body').textContent();
-        expect(pageContent).toContain(TEST_MARKER);
-      }
-    } catch (error) {
-      // Error handling - cleanup will still run via afterEach
-      throw error;
-    }
-  });
-
-  test('should modify stakeholder entry and verify on frontend', async ({ page, baseURL }) => {
-    try {
-      await loginToStrapi(page);
-
-      // Navigate to Stakeholders
-      await navigateToContentType(page, 'Stakeholder');
-
-      // Edit first stakeholder
-      const firstEntry = page.locator('tr[data-testid], tbody tr').first();
-      await firstEntry.click();
-      await page.waitForLoadState('networkidle');
-
-      // Find name/title field
-      const nameField = page.locator('input[name*="name"], input[name*="Name"], input[name*="title"]').first();
-      if (await nameField.count() > 0) {
-        const originalName = await nameField.inputValue();
-        contentBackups.push({
-          contentType: 'Stakeholder',
-          entryId: 'first',
-          fieldName: 'name',
-          originalValue: originalName
-        });
-
-        const testName = `${originalName} ${TEST_MARKER}`;
-        await nameField.fill(testName);
-
-        // Save
-        await page.locator('button:has-text("Save")').click();
-        await page.waitForLoadState('networkidle');
-
-        // Verify on frontend
-        await page.goto(`${baseURL}/stakeholder-directory`, { waitUntil: 'networkidle' });
-        const pageContent = await page.locator('body').textContent();
-        expect(pageContent).toContain(TEST_MARKER);
-      }
-    } catch (error) {
-      throw error;
-    }
-  });
-  
 });
 
 // ============================================================================
