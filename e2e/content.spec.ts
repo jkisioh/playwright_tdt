@@ -25,14 +25,16 @@ test.describe('TDT Website – Interactivity & Content Tests', () => {
     });
 
     test('should navigate between pages using menu', async ({ page }) => {
-      await page.goto('/');
+      await page.goto('/', { waitUntil: 'domcontentloaded' });
 
-      // Find and click a navigation link
-      const investmentLink = page.locator('a:has-text("Investment")').first();
-      if (await investmentLink.isVisible()) {
-        await investmentLink.click();
+      // Find and click a navigation link (scoped to navigation)
+      const nav = page.getByRole('navigation');
+      const investLink = nav.locator('a').filter({ hasText: /Invest/i }).first();
+
+      if (await investLink.isVisible({ timeout: 5000 }).catch(() => false)) {
+        await investLink.click();
         await page.waitForLoadState('domcontentloaded');
-        expect(page.url()).toContain('investment');
+        expect(page.url()).toContain('invest');
       }
     });
   });

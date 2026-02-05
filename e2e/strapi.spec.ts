@@ -98,19 +98,20 @@ const contentBackups: ContentBackup[] = [];
 
 // ============================================================================
 // STRAPI CONTENT MANAGEMENT TESTS
+// These tests require STRAPI_EMAIL and STRAPI_PASSWORD environment variables
+// Skip this entire describe block if credentials are not configured
 // ============================================================================
 
+// Only define these tests if credentials are configured
+const hasCredentials = STRAPI_EMAIL && STRAPI_PASSWORD;
+
 test.describe('Strapi CMS Content Management', () => {
+  // Skip all tests in this block if no credentials
+  test.skip(!hasCredentials, 'Strapi credentials not configured');
+
   test.use({
     navigationTimeout: 45000,
     actionTimeout: 30000
-  });
-
-  // Skip all tests if credentials are not configured
-  test.beforeAll(async () => {
-    if (!STRAPI_EMAIL || !STRAPI_PASSWORD) {
-      test.skip();
-    }
   });
 
   // CRITICAL: Cleanup that ALWAYS runs after each test
@@ -133,8 +134,6 @@ test.describe('Strapi CMS Content Management', () => {
    * Test: Verify Strapi admin login works
    */
   test('should login to Strapi admin panel', async ({ page }) => {
-    test.skip(!STRAPI_EMAIL || !STRAPI_PASSWORD, 'Strapi credentials not configured');
-
     const loggedIn = await loginToStrapi(page);
     expect(loggedIn).toBe(true);
 
@@ -146,8 +145,6 @@ test.describe('Strapi CMS Content Management', () => {
    * Test: Verify Strapi content is accessible
    */
   test('should access content manager', async ({ page }) => {
-    test.skip(!STRAPI_EMAIL || !STRAPI_PASSWORD, 'Strapi credentials not configured');
-
     await loginToStrapi(page);
 
     // Navigate to Content Manager
