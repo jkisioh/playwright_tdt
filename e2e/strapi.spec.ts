@@ -43,13 +43,22 @@ async function loginToStrapi(page: Page): Promise<boolean> {
     return false;
   }
 
-  await page.goto(`${STRAPI_ADMIN_URL}/auth/login`, { waitUntil: 'networkidle' });
+  await page.goto(`${STRAPI_ADMIN_URL}/auth/login`, { waitUntil: 'domcontentloaded', timeout: 60000 });
 
   // Wait for login form
   const emailInput = page.locator('input[name="email"]');
   const passwordInput = page.locator('input[name="password"]');
 
-  await expect(emailInput).toBeVisible({ timeout: 15000 });
+  await expect(emailInput).toBeVisible({ timeout: 30000 });
+
+  // Check for rate-limit error before attempting login
+  const rateLimitError = page.locator('text=Too many requests');
+  if (await rateLimitError.isVisible({ timeout: 1000 }).catch(() => false)) {
+    console.warn('Rate-limited by Strapi. Waiting before retry...');
+    await page.waitForTimeout(10000); // Wait 10 seconds
+    await page.reload();
+    await expect(emailInput).toBeVisible({ timeout: 30000 });
+  }
 
   // Fill credentials
   await emailInput.fill(STRAPI_EMAIL);
@@ -59,12 +68,25 @@ async function loginToStrapi(page: Page): Promise<boolean> {
   const submitButton = page.locator('button[type="submit"]');
   await submitButton.click();
 
-  // Wait for redirect to dashboard (URL should contain /admin but not /auth/login)
-  await page.waitForURL(url => url.toString().includes('/admin') && !url.toString().includes('/auth/login'), { timeout: 30000 });
+  // Wait a moment for the response
+  await page.waitForTimeout(2000);
 
-  // Verify we're logged in by checking for dashboard elements
-  const dashboardIndicator = page.locator('nav, [role="navigation"], main');
-  await expect(dashboardIndicator.first()).toBeVisible({ timeout: 10000 });
+  // Check for rate-limit error after login attempt
+  if (await rateLimitError.isVisible({ timeout: 1000 }).catch(() => false)) {
+    console.warn('Rate-limited after login attempt. Waiting and retrying...');
+    await page.waitForTimeout(15000); // Wait 15 seconds
+    await page.reload();
+    await expect(emailInput).toBeVisible({ timeout: 30000 });
+    await emailInput.fill(STRAPI_EMAIL);
+    await passwordInput.fill(STRAPI_PASSWORD);
+    await submitButton.click();
+    await page.waitForTimeout(2000);
+  }
+
+  // Wait for login to complete - use dashboard element visibility instead of URL
+  // This is more reliable across browsers (Firefox can be slower with URL changes)
+  const dashboardIndicator = page.locator('a[href*="content-manager"], nav a:has-text("Content Manager")').first();
+  await expect(dashboardIndicator).toBeVisible({ timeout: 45000 });
 
   return true;
 }
@@ -114,9 +136,12 @@ test.describe('Strapi CMS Content Management', () => {
   // Skip unless explicitly enabled with RUN_STRAPI_TESTS=true
   test.skip(!shouldRunStrapiTests, 'Strapi tests disabled (set RUN_STRAPI_TESTS=true to enable)');
 
+  // Run tests serially to avoid rate-limiting from Strapi
+  test.describe.configure({ mode: 'serial' });
+
   test.use({
-    navigationTimeout: 45000,
-    actionTimeout: 30000
+    navigationTimeout: 60000,
+    actionTimeout: 45000
   });
 
   // CRITICAL: Cleanup that ALWAYS runs after each test
@@ -181,9 +206,12 @@ test.describe('Strapi CMS Content Management', () => {
     await contentManagerLink.click();
     await page.waitForLoadState('networkidle');
 
+    // Wait for Content Manager sidebar to finish loading
+    await page.waitForSelector('text=Loading content', { state: 'hidden', timeout: 30000 }).catch(() => {});
+
     // Click specifically on "News" in the sidebar Collection Types
     const newsLink = page.locator('a[href*="news-item.news-item"]');
-    await expect(newsLink).toBeVisible({ timeout: 15000 });
+    await expect(newsLink).toBeVisible({ timeout: 30000 });
     await newsLink.click();
     await page.waitForLoadState('networkidle');
 
